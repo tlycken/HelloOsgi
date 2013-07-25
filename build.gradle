@@ -1,0 +1,64 @@
+apply plugin: 'java-base'
+apply plugin: 'osgi'
+apply plugin: 'eclipse'
+
+sourceSets {
+    serviceBundle
+    clientBundle
+}
+
+sourceSets.each { ss ->
+    assemble.dependsOn task("${ss.name}Jar", type: Jar) {
+
+        from ss.output
+        
+        manifest = osgiManifest {
+            name = 'Silly Service'
+            symbolicName = "se.sunstone.silly.${ss.name - 'Bundle'}"
+            version = 1.0
+            vendor = 'SE.SUNSTONE'
+            
+            classesDir = ss.output.classesDir
+            classpath = ss.runtimeClasspath
+            
+            def manifestFile = "${ss.output.resourcesDir}/META-INF/MANIFEST.MF"
+            println manifestFile
+            println file(manifestFile).exists()
+            
+            if (file(manifestFile).exists()) {
+                from(manifestFile) {
+                    eachEntry { details ->
+                        if (details.baseValue != details.mergeValue && details.baseValue != null) {
+                            details.value = details.baseValue
+                        }
+                        if (details.value == null) {
+                            details.exclude()
+                        }
+                    }
+                }
+            }
+        }
+        
+        baseName = ss.name
+    }
+}
+
+dependencies {
+    clientBundleCompile(
+        'org.osgi:org.osgi.core:4.2.0',
+        'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1', 
+        sourceSets.serviceBundle.output,
+    )
+    serviceBundleCompile 'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'http://repository.springsource.com/maven/bundles/release' }
+    maven { url 'http://repository.springsource.com/maven/bundles/external' }
+    maven { url 'http://repository.springsource.com/maven/libraries/release' }
+    maven { url 'http://repository.springsource.com/maven/libraries/external' }
+}
+
+eclipse.classpath.plusConfigurations = configurations.findAll { it.name.toLowerCase().endsWith('compile') }
+tasks.eclipseClasspath.dependsOn cleanEclipseClasspath

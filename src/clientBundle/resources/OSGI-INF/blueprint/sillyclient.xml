@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">
+
+    <reference id="sillyService"
+        interface="se.sunstone.silly.service.SillyService" />
+ 
+    <bean id="sillyClient" class="se.sunstone.client.SillyClient" init-method="startClient">
+        <property name="sillyService" ref="sillyService" />
+    </bean>
+</blueprint>
